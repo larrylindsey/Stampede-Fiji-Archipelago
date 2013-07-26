@@ -31,13 +31,18 @@
 #SBATCH -J vncserver                  # Job name
 #SBATCH -o vncserver.out              # Name of stdout output file (%j expands to jobId)
 #SBATCH -p vis                        # Queue name
-#SBATCH -N 1                          # Total number of nodes requested (16 cores/node)
-#SBATCH -n 16                         # Total number of mpi tasks requested
-#SBATCH -t 04:00:00                   # Run time (hh:mm:ss) - 4 hours
+#SBATCH -N 2                          # Total number of nodes requested (16 cores/node)
+#SBATCH -n 32                         # Total number of mpi tasks requested
+#SBATCH -t 01:00:00                   # Run time (hh:mm:ss) - 4 hours
+#SBATCH --mail-user=llindsey@clm.utexas.edu
+#SBATCH --mail-type=begin  # email me when the job starts
+#SBATCH --mail-type=end    # email me when the job finishes
 
 #--------------------------------------------------------------------------
 # ---- You normally should not need to edit anything below this point -----
 #--------------------------------------------------------------------------
+
+FIJI_EXECROOT=${HOME}/fiji
 
 echo job $JOB_ID execution at: `date`
 
@@ -117,6 +122,44 @@ echo "                            Then connect to localhost::$LOGIN_VNC_PORT"
 # set display for X applications
 export DISPLAY=":$VNC_DISPLAY"
 
+
+ARC_FILE=stampede_${LOGIN_VNC_PORT}.arc
+NODES=`scontrol show hostnames ${SLURM_JOB_NODELIST}`
+
+cat > ${ARC_FILE} << EOF
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<Cluster>
+  <RootNode>
+    <exec>${FIJI_EXECROOT}</exec>
+    <file>${SCRATCH}</file>
+    <default-exec>${FIJI_EXECROOT}</default-exec>
+    <default-file>${SCRATCH}</default-file>
+    <default-user>[user.name]</default-user>
+    <auto-start>yes</auto-start>
+  </RootNode>
+EOF
+
+for NODE in ${NODES}; do
+cat >> ${ARC_FILE} << EOF
+  <ClusterNode>
+    <host>${NODE}</host>
+    <user>[user.name]</user>
+    <exec>${FIJI_EXECROOT}</exec>
+    <file>${SCRATCH}</file>
+    <limit>0</limit>
+    <shell>SSH Shell</shell>
+    <ShellParameters>
+      <keyfile>${HOME}/.ssh/id_rsa</keyfile>
+      <executable>fiji</executable>
+      <ssh-port>22</ssh-port>
+    </ShellParameters>
+  </ClusterNode>
+EOF
+done
+
+echo "</Cluster>" >> ${ARC_FILE}
+
+JAVA_HOME=""
 
 # Warn the user when their session is about to close
 # see if the user set their own runtime
