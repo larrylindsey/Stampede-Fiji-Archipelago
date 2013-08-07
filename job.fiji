@@ -34,7 +34,7 @@
 #SBATCH -N 2                          # Total number of nodes requested (16 cores/node)
 #SBATCH -n 32                         # Total number of mpi tasks requested
 #SBATCH -t 01:00:00                   # Run time (hh:mm:ss) - 4 hours
-#SBATCH --mail-user=llindsey@clm.utexas.edu
+#SBATCH --mail-user=your.email.goes@here.com
 #SBATCH --mail-type=begin  # email me when the job starts
 #SBATCH --mail-type=end    # email me when the job finishes
 
@@ -191,6 +191,9 @@ fi
 # we need vglclient to run to have graphics across multi-node jobs
 vglclient >& /dev/null &
 VGL_PID=$!
+
+# run fiji
+${FIJI_EXECROOT}/fiji ${ARC_FILE}
 
 # run an xterm for the user; execution will hold here
 xterm -r -ls -geometry 80x24+10+10 -title '*** Exit this window to kill your VNC server ***'
